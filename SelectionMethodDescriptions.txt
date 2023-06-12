@@ -1,0 +1,67 @@
+"""
+Forward Selection
+We initialize an empty list forward_sel_features to store the selected features and a list candidates containing all the feature indices.
+
+We set a significance level alpha (0.0kf in this case) to decide whether to include a feature in the model.
+
+The while loop continues as long as there are candidates to be considered.
+
+Inside the while loop, we iterate through all candidate features. For each candidate, we create a temporary feature set temp_features by appending the candidate to the current list of selected features.
+
+We then add a constant column to the dataset using sm.add_constant(). This constant column represents the intercept of the linear regression model. Note that sm.add_constant() checks if a constant column already exists before adding it, so it won't add multiple constant columns to the dataset.
+
+We fit an OLS model using the current temporary feature set (including the constant column).
+
+We retrieve the p-value of the candidate feature by appending the last p-value in the model.pvalues array to the pvalues list. The last p-value corresponds to the candidate feature because the constant column is the first column in the dataset.
+
+After iterating through all the candidates, we find the index of the lowest p-value.
+
+If the lowest p-value is less than the significance level, we add the corresponding feature to the selected features list and remove it from the candidates list.
+
+The loop continues until no more features have p-values less than the significance level.
+
+Here's a step-by-step explanation of the logic of p-value selection:
+
+We start with an empty list of pvalues.
+For each candidate feature, we create a temporary feature set by adding the candidate to the forward_sel_features.
+We fit the OLS model using this temporary feature set.
+We append the p-value of the candidate feature (model.pvalues[-1]) to the pvalues list.
+After the loop, the pvalues list will have the p-values of all candidate features.
+We find the index of the lowest p-value in the pvalues list.
+We use this index to access the corresponding candidate feature in the candidates list.
+"""
+
+"""
+Backward elimination
+Initially, we include all the features in backward_sel_features list.
+We enter the while loop that will continue until no more features need to be removed.
+We add a constant to the dataset for the intercept using X_temp = sm.add_constant(X[:, backward_sel_features]).
+We fit the OLS model using the current set of features in backward_sel_features.
+We obtain the p-values of the features using pvalues = model.pvalues[1:]. We exclude the intercept by slicing from index 1.
+We find the index of the highest p-value using worst_feature_idx = np.argmax(pvalues). This index is relative to the pvalues list, which has the same length and order as the backward_sel_features list.
+We check if the highest p-value is greater than the significance level alpha. If it is, we remove the corresponding feature from backward_sel_features using removed_feature = backward_sel_features.pop(worst_feature_idx). Since the pvalues and backward_sel_features lists have the same order, we can use the worst_feature_idx to remove the correct feature.
+If no more features have p-values greater than alpha, we break the loop.
+Finally, we print the selected features after backward elimination.
+In this method, we start with all features and iteratively remove the least significant ones (based on their p-values) until all remaining features have p-values less than the significance level alpha.
+
+"""
+
+"""
+Bidirectional elimination
+In the provided code, this is possible because we maintain separate lists for forward and backward elimination steps, and we do not remove a feature permanently.
+
+The forward selection step uses forward_candidates, which is a copy of the candidates list. If a feature is significant, it is added to the bidirect_sel_features and removed from candidates. However, this feature could be removed again in the backward elimination step if it becomes insignificant when combined with other features.
+
+The backward elimination step uses backward_candidates, which is a copy of the bidirect_sel_features list. If a feature is not significant, it is removed from the bidirect_sel_features and added back to candidates. This allows the feature to be reconsidered for inclusion in the model during a future forward selection step.
+
+In this way, the bidirectional elimination process is more flexible than forward or backward elimination alone, as it allows features to be added and removed iteratively based on their significance in combination with other features.
+
+best explanation of the theoretical idea behind stepwise regression is here https://www.youtube.com/watch?v=An40g_j1dHA
+
+Here's the process in detail:
+In each iteration of the while loop, we first perform a single round of forward selection. We try adding each candidate feature to the current set of bidirect_sel_features one at a time, and if a feature is significant, we add it to the set and remove it from candidates.
+Then, within the same iteration of the loop, we perform a single round of backward elimination. We try removing each feature from the current set of bidirect_sel_features one at a time, and if a feature is not significant, we remove it from the set and add it back to candidates.
+After each iteration, we check if any features were added or removed during the forward selection or backward elimination steps. If no features were added or removed, we break the loop, as it means we have reached an optimal set of features.
+The final set of bidirect_sel_features includes the selected features after performing the iterative process of forward selection and backward elimination.
+So, in this bidirectional elimination approach, we are continually updating the set of selected features by adding and removing features based on their significance. The process stops when no more features can be added or removed, and the remaining set of features is considered the bidirectional set.
+"""
